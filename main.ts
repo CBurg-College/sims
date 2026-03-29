@@ -124,7 +124,7 @@ namespace SimSays {
     }
 
     //% block="show all colors"
-    //% block.loc.nl="toon de kleuren"
+    //% block.loc.nl="toon alle kleuren"
     export function showAllColors() {
         SimSays.showFirstColor()
         while (SimSays.isInSeries())
