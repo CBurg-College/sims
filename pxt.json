@@ -5,7 +5,7 @@
         "core": "*",
         "radio": "*",
         "microphone": "*",
-        "et-simon": "github:etmbit/et-simon#19dc34271d648bf0af17c6f4a313070796a7608c"
+        "et-simon": "github:etmbit/et-simon#75aa52997972389926e53c1a2e6efc8de1c728cf"
     },
     "files": [
         "main.blocks",

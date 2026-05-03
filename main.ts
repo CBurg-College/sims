@@ -1,181 +1,237 @@
 /*
-File:      github.com/CBurg-College/sims.ts
-Copyright: ETmbit, 2026
-
-License:
-This file is part of the ETmbit extensions for MakeCode for micro:bit.
-It is free software and you may distribute it under the terms of the
-GNU etbasic Public License (version 3 or later) as published by the
-Free Software Foundation. The full license text you find at
-https://www.gnu.org/licenses.
-
-Disclaimer:
-ETmbit extensions are distributed without any warranty.
-
-Dependencies:
-ETmbit/et-simon
+File:       github.com/CBurg-College/sims.ts
+Version:	2026-1
+Copyright:  ElecTricks, 2026
+License:    GNU GPL 3 or later
+Disclaimer: Distributed without any warranty
+Depends on: et-simon.ts
 */
 
-EtSimon.setPins(DigitalPin.P8, DigitalPin.P0, DigitalPin.P1, DigitalPin.P2)
+//////////////////////
+//  INCLUDE         //
+//  et-ledstrip.ts  //
+//////////////////////
 
-//% color="#66AA22" icon="\uf111"
-//% block="Simon Says"
-//% block.loc.nl="Simon Says"
-namespace SimSays {
+enum NeopixelMode {
+    GRB = 1,
+    RGBW = 2,
+    RGB = 3
+}
 
-    let ISGAMING = false
+namespace EtLedstrip {
 
-    //% block="show the points"
-    //% block.loc.nl="toon de score"
-    export function showPoints() {
-        basic.clearScreen()
-        let points = EtSimon.getPoints()
-        basic.showNumber(points)
-        if (points < 10) etbasic.wait(2)
-        EtSimon.clearColor()
-        basic.showArrow(ArrowNames.West)
-    }
+    export class Device {
 
-    //% block="increase the points"
-    //% block.loc.nl="verhoog de score"
-    export function increasePoints() {
-        EtSimon.increasePoints()
-    }
+        pin: DigitalPin
+        max: number
+        mode: NeopixelMode
+        buffer: Buffer
+        size: number
+        bright: number = 10
 
-    //% block="the wrong color was chosen"
-    //% block.loc.nl="de verkeerde kleur werd gekozen"
-    export function hasFailed(): boolean {
-        return !EtSimon.isMatchingColor()
-    }
+        constructor(pin: DigitalPin, leds: number, mode: NeopixelMode) {
+            this.pin = pin
+            this.max = leds
+            this.mode = mode
+            this.size = leds * (mode == NeopixelMode.RGBW ? 4 : 3)
+            this.buffer = pins.createBuffer(this.size)
+        }
 
-    //% block="the right color was chosen"
-    //% block.loc.nl="de juiste kleur werd gekozen"
-    export function isSuccess(): boolean {
-        return EtSimon.isMatchingColor()
-    }
+        show() {
+            light.sendWS2812Buffer(this.buffer, this.pin)
+        }
 
-    //% block="the chosen color"
-    //% block.loc.nl="de gekozen kleur"
-    export function getButtonColor(): ETcolor {
-        return EtSimon.getButtonColor()
-    }
-
-    //% block="wait until a color is chosen"
-    //% block.loc.nl="wacht tot een kleur wordt gekozen"
-    export function waitForButton() {
-        EtSimon.waitForButton()
-    }
-
-    //% block="the displayed color"
-    //% block.loc.nl="de getoonde kleur"
-    export function getLedColor(): ETcolor {
-        return EtSimon.getCurrentColor()
-    }
-
-    //% block="ask the next color"
-    //% block.loc.nl="vraag de volgende kleur"
-    export function askNextColor() {
-        EtSimon.setNextColor()
-    }
-
-    //% block="ask the first color"
-    //% block.loc.nl="vraag de eerste kleur"
-    export function askFirstColor() {
-        EtSimon.clearColor()
-        basic.clearScreen()
-        etbasic.wait(0.5)
-        basic.showIcon(IconNames.Heart)
-        EtSimon.setFirstColor()
-    }
-
-    //% block="ask all colors"
-    //% block.loc.nl="vraag alle kleuren"
-    export function askAllColors() {
-        SimSays.askFirstColor()
-        while (SimSays.isInSeries()) {
-            EtSimon.waitForButton()
-            if (EtSimon.isMatchingColor()) {
-                EtSimon.increasePoints()
-                EtSimon.setNextColor()
+        setPixelRGB(offset: number, red: number, green: number, blue: number, white: number = 0): void {
+            offset *= (this.mode == NeopixelMode.RGBW ? 4 : 3)
+            switch (this.mode) {
+                case NeopixelMode.GRB:
+                    this.buffer[offset + 0] = Math.floor(green * this.bright / 100)
+                    this.buffer[offset + 1] = Math.floor(red * this.bright / 100);
+                    this.buffer[offset + 2] = Math.floor(blue * this.bright / 100);
+                    break;
+                case NeopixelMode.RGB:
+                    this.buffer[offset + 0] = Math.floor(red * this.bright / 100);
+                    this.buffer[offset + 1] = Math.floor(green * this.bright / 100);
+                    this.buffer[offset + 2] = Math.floor(blue * this.bright / 100);
+                    break;
+                case NeopixelMode.RGBW:
+                    this.buffer[offset + 0] = Math.floor(red * this.bright / 100);
+                    this.buffer[offset + 1] = Math.floor(green * this.bright / 100);
+                    this.buffer[offset + 2] = Math.floor(blue * this.bright / 100);
+                    this.buffer[offset + 3] = Math.floor(white * this.bright / 100);
+                    break;
             }
+        }
+
+        setPixelColor(pixel: number, color: ETcolor, white: number = 0): void {
+            if (pixel < 0 || pixel >= this.max)
+                return;
+            let rgb = etFromColor(color)
+            let red = (rgb >> 16) & 0xFF;
+            let green = (rgb >> 8) & 0xFF;
+            let blue = (rgb) & 0xFF;
+            this.setPixelRGB(pixel, red, green, blue, white)
+        }
+
+        setRGB(red: number, green: number, blue: number, white: number = 0) {
+            for (let i = 0; i < this.max; ++i)
+                this.setPixelRGB(i, red, green, blue, white)
+        }
+
+        setColor(color: ETcolor, white: number = 0) {
+            let rgb = etFromColor(color)
+            let red = (rgb >> 16) & 0xFF;
+            let green = (rgb >> 8) & 0xFF;
+            let blue = (rgb) & 0xFF;
+            for (let i = 0; i < this.max; ++i)
+                this.setPixelRGB(i, red, green, blue, white)
+        }
+
+        setClear(): void {
+            this.buffer.fill(0, 0, this.size);
+        }
+
+        setBrightness(brightness: number) {
+            if (brightness < 0) brightness = 0
+            if (brightness > 100) brightness = 100
+            // small steps at low brightness and big steps at high brightness
+            brightness = (brightness * brightness / 100)
+            this.bright = brightness
+        }
+
+        setRotate(rotation: ETrotate): void {
+            let offset = (this.mode == NeopixelMode.RGBW ? 4 : 3)
+            if (rotation == ETrotate.Clockwise)
+                this.buffer.rotate(-offset, 0, this.size)
             else
-                SimSays.stopGame()
+                this.buffer.rotate(offset, 0, this.size)
+        }
+
+        rainbow(rotation: ETrotate, pace: ETpace = ETpace.Normal) {
+            if (rotation == ETrotate.Clockwise) {
+                this.setPixelColor(0, ETcolor.Red)
+                this.setPixelColor(1, ETcolor.Orange)
+                this.setPixelColor(2, ETcolor.Yellow)
+                this.setPixelColor(3, ETcolor.Green)
+                this.setPixelColor(4, ETcolor.Blue)
+                this.setPixelColor(5, ETcolor.Indigo)
+                this.setPixelColor(6, ETcolor.Violet)
+                this.setPixelColor(7, ETcolor.Purple)
+            }
+            else {
+                this.setPixelColor(7, ETcolor.Red)
+                this.setPixelColor(6, ETcolor.Orange)
+                this.setPixelColor(5, ETcolor.Yellow)
+                this.setPixelColor(4, ETcolor.Green)
+                this.setPixelColor(3, ETcolor.Blue)
+                this.setPixelColor(2, ETcolor.Indigo)
+                this.setPixelColor(1, ETcolor.Violet)
+                this.setPixelColor(0, ETcolor.Purple)
+            }
+            this.show()
+            basic.pause(pace)
+            pace = (pace + 1) * 75
+            for (let i = 0; i < this.max; i++) {
+                this.setRotate(rotation)
+                this.show()
+                basic.pause(pace)
+            }
+        }
+
+        snake(color: ETcolor, rotation: ETrotate, pace: ETpace = ETpace.Normal) {
+            let rgb = etFromColor(color)
+            let red = (rgb >> 16) & 0xFF;
+            let green = (rgb >> 8) & 0xFF;
+            let blue = (rgb) & 0xFF;
+            this.setClear();
+            this.show()
+            pace = (pace + 1) * 75
+            for (let i = this.max - 1; i >= 0; i--) {
+                if (rotation == ETrotate.Clockwise)
+                    this.setPixelRGB(this.max - i, red, green, blue)
+                else
+                    this.setPixelRGB(i, red, green, blue)
+                this.show()
+                basic.pause(pace)
+            }
+            this.show()
+            for (let i = this.max - 1; i >= 0; i--) {
+                if (rotation == ETrotate.Clockwise)
+                    this.setPixelRGB(this.max - i, 0, 0, 0)
+                else
+                    this.setPixelRGB(i, 0, 0, 0)
+                this.show()
+                basic.pause(pace)
+            }
+            if (rotation == ETrotate.Clockwise)
+                this.setPixelRGB(0, 0, 0, 0)
+            else
+                this.setPixelRGB(this.max, 0, 0, 0)
+            this.show()
+            basic.pause(pace)
         }
     }
 
-    //% block="show the next color"
-    //% block.loc.nl="toon de volgende kleur"
-    export function showNextColor() {
-        EtSimon.setNextColor()
-        EtSimon.showCurrentColor()
-        etbasic.wait(0.5)
-        EtSimon.clearColor()
-        etbasic.wait(0.2)
-    }
-
-    //% block="show the first color"
-    //% block.loc.nl="toon de eerste kleur"
-    export function showFirstColor() {
-        basic.showIcon(IconNames.SmallHeart)
-        etbasic.wait(0.5)
-        EtSimon.setFirstColor()
-        EtSimon.showCurrentColor()
-        etbasic.wait(0.3)
-        EtSimon.clearColor()
-        etbasic.wait(0.2)
-    }
-
-    //% block="show all colors"
-    //% block.loc.nl="toon alle kleuren"
-    export function showAllColors() {
-        SimSays.showFirstColor()
-        while (SimSays.isInSeries())
-            SimSays.showNextColor()
-    }
-
-    //% block="append the series with a color"
-    //% block.loc.nl="voeg een kleur aan de serie toe"
-    export function appendColor() {
-        EtSimon.extendSeries()
-    }
-
-    //% block="the next color is required"
-    //% block.loc.nl="de volgende kleur nodig is"
-    export function isSeriesEnd(): boolean {
-        return (ISGAMING && EtSimon.isSeriesEnd())
-    }
-
-    //% block="still continuing the series"
-    //% block.loc.nl="nog met de serie bezig"
-    export function isInSeries(): boolean {
-        return (ISGAMING && EtSimon.isSeriesBusy())
-    }
-
-    //% block="the next color is required"
-    //% block.loc.nl="de volgende kleur nodig is"
-    export function restartSeries() {
-        EtSimon.restartSeries()
-    }
-
-    //% block="the game is busy"
-    //% block.loc.nl="het spel bezig is"
-    export function isGaming(): boolean {
-        return ISGAMING
-    }
-
-    //% block="stop the game"
-    //% block.loc.nl="stop het spel"
-    export function stopGame() {
-        basic.showIcon(IconNames.Sad)
-        ISGAMING = false
-    }
-
-    //% block="start the game"
-    //% block.loc.nl="start het spel"
-    export function startGame() {
-        EtSimon.clearSeries()
-        ISGAMING = true
+    export function create(pin: DigitalPin, leds: number, mode: NeopixelMode = NeopixelMode.GRB): Device {
+        let device = new Device(pin, leds, mode)
+        return device
     }
 }
 
-basic.showArrow(ArrowNames.West)
+///////////////////
+//  END INCLUDE  //
+///////////////////
+
+
+let pinRed = DigitalPin.P0
+let pinGreen = DigitalPin.P1
+let pinBlue = DigitalPin.P2
+pins.setPull(pinRed, PinPullMode.PullDown)
+pins.setPull(pinGreen, PinPullMode.PullDown)
+pins.setPull(pinBlue, PinPullMode.PullDown)
+
+let leddev = EtLedstrip.create(DigitalPin.P8, 1)
+
+function showRed() {
+    leddev.setColor(ETcolor.Red)
+    leddev.show()
+}
+EtSimon.registerOptionHandler(showRed)
+
+function showGreen() {
+    leddev.setColor(ETcolor.Green)
+    leddev.show()
+}
+EtSimon.registerOptionHandler(showGreen)
+
+function showBlue() {
+    leddev.setColor(ETcolor.Blue)
+    leddev.show()
+}
+EtSimon.registerOptionHandler(showBlue)
+
+function clear() {
+    leddev.setColor(ETcolor.Black)
+    leddev.show()
+}
+EtSimon.registerClearHandler(clear)
+
+function readButton(): number {
+    if (pins.digitalReadPin(pinRed) === ET_HIGH) {
+        while (pins.digitalReadPin(pinRed) === ET_HIGH) basic.pause(1)
+        basic.pause(100) // debounce
+        return 0
+    }
+    if (pins.digitalReadPin(pinGreen) === ET_HIGH) {
+        while (pins.digitalReadPin(pinGreen) === ET_HIGH) basic.pause(1)
+        basic.pause(100) // debounce
+        return 1
+    }
+    if (pins.digitalReadPin(pinBlue) === ET_HIGH) {
+        while (pins.digitalReadPin(pinBlue) === ET_HIGH) basic.pause(1)
+        basic.pause(100) // debounce
+        return 2
+    }
+    return -1
+}
+EtSimon.registerButtonHandler(readButton)
