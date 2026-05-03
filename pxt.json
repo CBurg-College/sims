@@ -5,7 +5,7 @@
         "core": "*",
         "radio": "*",
         "microphone": "*",
-        "simonsays": "github:etmbit/simonsays#1015e55fe64384c265937bdfb8d3cc76496350b0"
+        "et-simon": "github:etmbit/et-simon#19dc34271d648bf0af17c6f4a313070796a7608c"
     },
     "files": [
         "main.blocks",
@@ -16,7 +16,7 @@
         "test.ts"
     ],
     "targetVersions": {
-        "target": "8.0.18",
+        "target": "8.0.21",
         "targetId": "microbit"
     },
     "supportedTargets": [
