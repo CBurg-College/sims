@@ -23,7 +23,6 @@ EtSimon.setPins(DigitalPin.P8, DigitalPin.P0, DigitalPin.P1, DigitalPin.P2)
 //% block.loc.nl="Simon Says"
 namespace SimSays {
 
-
     let ISGAMING = false
 
     //% block="show the points"
@@ -75,13 +74,13 @@ namespace SimSays {
 
     //% block="ask the next color"
     //% block.loc.nl="vraag de volgende kleur"
-    export function checkNextColor() {
+    export function askNextColor() {
         EtSimon.setNextColor()
     }
 
     //% block="ask the first color"
     //% block.loc.nl="vraag de eerste kleur"
-    export function checkFirstColor() {
+    export function askFirstColor() {
         EtSimon.clearColor()
         basic.clearScreen()
         etbasic.wait(0.5)
@@ -91,8 +90,8 @@ namespace SimSays {
 
     //% block="ask all colors"
     //% block.loc.nl="vraag alle kleuren"
-    export function checkAllColors() {
-        SimSays.checkFirstColor()
+    export function askAllColors() {
+        SimSays.askFirstColor()
         while (SimSays.isInSeries()) {
             EtSimon.waitForButton()
             if (EtSimon.isMatchingColor()) {
