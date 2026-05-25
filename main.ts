@@ -4,7 +4,7 @@ Version:	2026-1
 Copyright:  ElecTricks, 2026
 License:    GNU GPL 3 or later
 Disclaimer: Distributed without any warranty
-Depends on: et-simon.ts
+Depends on: etsimon.ts
 */
 
 //////////////////////
