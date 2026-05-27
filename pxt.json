@@ -5,7 +5,7 @@
         "core": "*",
         "radio": "*",
         "microphone": "*",
-        "etsimon": "github:etmbit/etsimon#ebc834ac797d379dcd34e7ebb091c394cf30cd2a"
+        "etsimon": "github:etmbit/etsimon#8339a9789225baed71b5448f1d78ccaf0e62ea62"
     },
     "files": [
         "main.blocks",
